@@ -338,3 +338,33 @@ def duf_downsample(x, kernel_size=13, scale=4):
     if squeeze_flag:
         x = x.squeeze(0)
     return x
+
+
+def paired_paths_from_text(files, keys, dataroot):
+    """Scan text to generate image path pairs.
+
+    Args:
+        files (list[str]): A list of text file path. The order of list should
+        keys (list[str]): A list of keys identifying folders. The order should
+        dataroot (str): Path to the root of data.
+    Returns:
+        dict: Image path pairs that contains lq path and gt path.
+    """
+    assert len(files) == 2, ('The len of folders should be 2 with [input_files, gt_files]. ' f'But got {len(files)}')
+    assert len(keys) == 2, f'The len of keys should be 2 with [input_key, gt_key]. But got {len(keys)}'
+    input_file, gt_file = files
+    input_key, gt_key = keys
+
+    with open(input_file, 'r') as f:
+        input_paths = [osp.normpath(line.strip()) for line in f]
+    with open(gt_file, 'r') as f:
+        gt_paths = [osp.normpath(line.strip()) for line in f]
+
+    assert len(input_paths) == len(gt_paths), (f'{input_key} and {gt_key} datasets have different number of images: '
+                                               f'{len(input_paths)}, {len(gt_paths)}.')
+    paths = []
+    for input_path, gt_path in zip(input_paths, gt_paths):
+        input_path = osp.join(dataroot, input_path)
+        gt_path = osp.join(dataroot, gt_path)
+        paths.append(dict([(f'{input_key}_path', input_path), (f'{gt_key}_path', gt_path)]))
+    return paths
